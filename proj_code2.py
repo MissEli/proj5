@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Nov 11 14:45:49 2021
-
-@author: ivewi
-"""
-
 # A program that will read data from file and plot the channels and events
 import numpy as np
 import matplotlib.pyplot as plt
