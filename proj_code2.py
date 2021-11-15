@@ -13,6 +13,10 @@ Ec = [0]*200*100 # channels
 i = 0 # count events
 n = 0 # count added events to channel
 events = int(input('How many events should be read?: '))
+
+if events > 19585:
+    print('max nr of events = 19585')
+    events = int(input('How many events should be read?: '))
 for row in file:
     if i == events:
         break

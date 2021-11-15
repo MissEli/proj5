@@ -46,6 +46,7 @@ print(i)
 print(n)
 
 
+with open('ec.txt', 'w') as f2:
 # Plot
 x1 = np.arange(0, len(E))
 plt.plot(x1,E,'.')
