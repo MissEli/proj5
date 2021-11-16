@@ -2,10 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 Ec = []
-file = np.loadtxt('ec.txt', dtype=str, skiprows=1)
+file = np.loadtxt('ec.txt', dtype=float, skiprows=1)
 
 for line in file:
-    Ec.append(float(line))
+    Ec.append(line)
 
 
 # plot events per channel
