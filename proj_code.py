@@ -103,23 +103,27 @@ plt.ylabel('delta T [ns]')
 ToF = []
 PH = []
 ev = [p577,p1815,a1400,a1464,a2050,a4750,t2730]
-for list in ev:
-    for x in list:
-        ToF.append(x[1])
-        PH.append(x[0])
+# for list in ev:
+#     for x in list:
+#         ToF.append(x[1])
+#         PH.append(x[0])
 
 
-plt.plot(PH,ToF,'r.')
-plt.show()
+# plt.plot(PH,ToF,'r.')
+# plt.show()
 
 fname = ['p577.txt','p1815.txt','a1400.txt','a1464.txt','a2050.txt','a4750.txt','t2730.txt','allp.txt']
 
-for i,list in enumerate(ev):
-    print(i)
-    with open(fname[i], 'w+') as file:
-        file.write('#'+fname[i]+', PH, ToF, MCP PH')
+with open(fname[7], 'w+') as file:
+    file.write('Particle, PH, ToF, MCP PH')
+    for i,list in enumerate(ev):
+        print(i)
+        # file.write('#'+fname[i])
         for x in list:
             file.write('\n')
-            file.write(str(x))
+            file.write(fname[i].replace('.txt',''))
+            file.write(', '+ str(x[0]))
+            file.write(', '+ str(x[1]))
+            file.write(', '+ str(x[2]))
 
 
