@@ -68,15 +68,6 @@ f.close()
 print(i)
 
 
-
-
-# with open('particles.txt', 'w') as f2:
-#     f2.write('# Particle, PH, ToF')
-#     for x in Ec:
-#         f2.write('\n')
-#         f2.write(str(x)) 
-# f2.close()
-
 print('done')
 
 # *** Plot *** #
@@ -86,44 +77,51 @@ print('done')
 # plt.ylabel('energy channel')
 # plt.show()
 
-
 # np.histogram(T, bins=10, range=None, normed=None, weights=None, density=None)
 # plt.hist(E,bins = 2000, range=(0,200))
 # plt.xlabel('energy channel')
 # plt.ylabel('events')
 # plt.show()
 
-plt.plot(E,T,'.')
-plt.xlabel('pulse height')
-plt.ylabel('delta T [ns]')
+# plt.plot(E,T,'.')
+# plt.xlabel('pulse height')
+# plt.ylabel('delta T [ns]')
 # plt.show()
+
 
 # Look at each event separately
 # print('(PH, ToF)')
 ToF = []
 PH = []
 ev = [p577,p1815,a1400,a1464,a2050,a4750,t2730]
-# for list in ev:
-#     for x in list:
-#         ToF.append(x[1])
-#         PH.append(x[0])
+i=1
+for list in ev:
+    for x in list:
+        ToF.append(x[1])
+        PH.append(x[0])
+    plt.figure(i)
+    plt.hist(ToF,bins=100, range=(60,100))
+    plt.xlabel('tof')
+    
+    i+=1
 
-
+plt.show()
 # plt.plot(PH,ToF,'r.')
 # plt.show()
 
-fname = ['p577.txt','p1815.txt','a1400.txt','a1464.txt','a2050.txt','a4750.txt','t2730.txt','allp.txt']
+# Save to text-file
+# fname = ['p577.txt','p1815.txt','a1400.txt','a1464.txt','a2050.txt','a4750.txt','t2730.txt','allp.txt']
 
-with open(fname[7], 'w+') as file:
-    file.write('Particle, PH, ToF, MCP PH')
-    for i,list in enumerate(ev):
-        print(i)
-        # file.write('#'+fname[i])
-        for x in list:
-            file.write('\n')
-            file.write(fname[i].replace('.txt',''))
-            file.write(', '+ str(x[0]))
-            file.write(', '+ str(x[1]))
-            file.write(', '+ str(x[2]))
+# with open(fname[7], 'w+') as file:
+#     file.write('Particle, PH, ToF, MCP PH')
+#     for i,list in enumerate(ev):
+#         print(i)
+#         # file.write('#'+fname[i])
+#         for x in list:
+#             file.write('\n')
+#             file.write(fname[i].replace('.txt',''))
+#             file.write(', '+ str(x[0]))
+#             file.write(', '+ str(x[1]))
+#             file.write(', '+ str(x[2]))
 
 
