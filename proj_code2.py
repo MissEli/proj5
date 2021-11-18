@@ -234,7 +234,6 @@ def main():
     Etrue = [element*1000 for element in Etrue]
     E_hist = plt.hist(E,bins = 5000, range=(0,200))
     xdata = E_hist[1]
-    print(np.size(xdata))
     # xdata = np.delete(xdata,1,0)
     ydata = E_hist[0]
     plt.xlabel('energy channel')
@@ -249,7 +248,8 @@ def main():
     fitting = calibration(xdata,[means[0],means[3]],energies)
     E_peaks = E_calib(fitting[0],fitting[1],np.delete(xdata,0),ydata,means,stds)
     phd = PHD(Etrue,E_peaks[0],Eloss)
-    return phd
+    result = np.vstack((E_peaks,phd))
+    return result
 
 # mass = [1,4,4,1,4,3,4]
 # plt.plot(mass,phd,'.')
