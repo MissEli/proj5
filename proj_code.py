@@ -110,18 +110,18 @@ plt.show()
 # plt.show()
 
 # Save to text-file
-# fname = ['p577.txt','p1815.txt','a1400.txt','a1464.txt','a2050.txt','a4750.txt','t2730.txt','allp.txt']
+fname = ['p577.txt','p1815.txt','a1400.txt','a1464.txt','a2050.txt','a4750.txt','t2730.txt','allp.txt']
 
-# with open(fname[7], 'w+') as file:
-#     file.write('Particle, PH, ToF, MCP PH')
-#     for i,list in enumerate(ev):
-#         print(i)
-#         # file.write('#'+fname[i])
-#         for x in list:
-#             file.write('\n')
-#             file.write(fname[i].replace('.txt',''))
-#             file.write(', '+ str(x[0]))
-#             file.write(', '+ str(x[1]))
-#             file.write(', '+ str(x[2]))
+for i,list in enumerate(ev):
+    print(i)
+    with open(fname[i], 'w+') as file:
+        file.write('#'+fname[i]+', PH, ToF, MCP PH')
+        for x in list:
+            file.write('\n')
+            file.write(str(x[0]))
+            file.write(', '+ str(x[1]))
+            file.write(', '+ str(x[2]))
+
+
 
 
