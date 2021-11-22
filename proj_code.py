@@ -47,19 +47,19 @@ for line in f:
         if float(columns[7]) > 10:
             try:
                 
-                if n<1740:
+                if i<1740:
                     p577.append([e, t , mcp])
-                if n>1800 and n<4340:
+                if i>1800 and i<4340:
                     p1815.append([e, t , mcp])
-                if 4660<n and n<7730:
+                if i>4660 and i<7730:
                     a1400.append([e, t , mcp])
-                if 7760<n and n<10720:
+                if i>7760 and i<10720:
                     a1464.append([e, t , mcp])
-                if 10760<n and n<13630:
+                if i>10760 and i<13630:
                     a2050.append([e, t , mcp])
-                if 13670<n and n<17150:
+                if i>13670 and i<17150:
                     a4750.append([e, t , mcp])
-                if n>17170:
+                if i>17170:
                     t2730.append([e, t , mcp])
             except IndexError as ie:    #Only needed to find last index
                 print("*** Index Error: ")
@@ -99,32 +99,32 @@ print('done')
 ToF = []
 PH = []
 ev = [p577,p1815,a1400,a1464,a2050,a4750,t2730]
-m= 0
-for list in ev:
-    for x in list:
-        ToF.append(x[1])
-        PH.append(x[0])
-        m+=1
-    # plt.figure(i)
-    # plt.hist(ToF,bins=100)
-    # plt.xlabel('tof')
+# m=0
+# for list in ev:
+#     for x in list:
+#         ToF.append(x[1])
+#         PH.append(x[0])
+#         m+=1
+#     # plt.figure(i)
+#     # plt.hist(ToF,bins=100)
+#     # plt.xlabel('tof')
 
 
-print(m)
+# print(m)
 
 # plt.show()
-plt.plot(E,T,'b.')
-plt.xlabel('PH')
-plt.ylabel('t')
-plt.plot(PH,ToF,'r.')
-plt.legend(['all data','peak data'])
-plt.show()
+# plt.plot(E,T,'b.')
+# plt.xlabel('PH')
+# plt.ylabel('t')
+# plt.plot(PH,ToF,'r.')
+# plt.legend(['all data','peak data'])
+# plt.show()
 
 # Save to text-file
 fname = ['p577.txt','p1815.txt','a1400.txt','a1464.txt','a2050.txt','a4750.txt','t2730.txt','allp.txt']
 
 for i,list in enumerate(ev):
-    # print(i)
+    print(i)
     with open(fname[i], 'w+') as file:
         file.write('#'+fname[i]+', PH, ToF, MCP PH')
         for x in list:
