@@ -17,11 +17,10 @@ def ff(x, *params):
     pdf = norm.pdf(x,params[1],params[2])*params[0] + params[3]
     return pdf
 
-def pulse_plotter(xdata,ydata,fit,title):
-    plt.figure(figsize=(12,10))
+def pulse_plotter(xdata,ydata,fit):
+    plt.subplot(222)
     plt.plot(xdata,ydata,'b')
     plt.plot(xdata,fit,'r')
-    plt.title(title)
     plt.xlabel('Channel number')
     plt.ylabel('Pulse height')
 
@@ -35,14 +34,12 @@ def peak_finder(ydata,height=15,prominence=15,distance=20):
     peak_data = np.vstack((peak_index,peak_heights,left_bases,right_bases))
     return peak_data
     
-def data_fit(xdata,ydata,fname):
+def data_fit(xdata,ydata):
     #Create arrays to hold standard deviation and mean of fitted peaks
     peak = peak_finder(ydata)
     std = np.std(ydata)
     mean = xdata[peak[0][0].astype(int)]
     area = np.sum(ydata)
-    
-    #savefig = input('Save figures? [y/n]: ') #User choses to save figures or not
 
     #Initial guess for fitting using known parameters
     p0 = [area,mean,std,0]                   
@@ -57,10 +54,8 @@ def data_fit(xdata,ydata,fname):
         params = p0 #Keep initial guess as fitting parameters for Gaussian
     
     #Plotting
-    pulse_plotter(xdata,ydata,ff(xdata,*params),f'Peak for {fname}')
+    pulse_plotter(xdata,ydata,ff(xdata,*params))
     #Save figures if savefig is given as "y"
-    # if savefig=='y':
-    #     plt.savefig(f'Peak_{fname}.png',format='png')
         
             
     
@@ -76,10 +71,10 @@ def T_calib(k,m,xdata,ydata,peak,std):
     times = [x*k+m for x in xdata]
     T_peak = peak*k+m
     T_std = std
-    plt.figure(figsize=(12,10))
+    plt.subplot(212)
     plt.plot(times,ydata,'-')
     plt.xlabel('Time [ns]')
-    plt.ylabel('Events')
+    plt.ylabel('Pulse height')
     output = [T_peak,std]
     return output
 
@@ -102,18 +97,24 @@ def main():
     peaks = []
     calib_peaks = []
     stds = []
+    titles = ['p1815','p577','a1400','a1464','a2050','a4750','t2730']
     for name in fname:
         time = load(name)
         times.append(time)
     # rows, columns = times.shape
     results=[]
     pdt = []
+    savefig = input('Save figures? [y/n]: ') #User choses to save figures or not
     for i in range(len(times)):
-        plt.figure()
+        plt.figure(figsize=(15,15))
+        plt.subplot(221)
         T_hist = plt.hist(times[i],bins=200,range=(60,85))
+        plt.suptitle(f'Peak for {titles[i]}')
+        plt.ylabel('Pulse height')
+        plt.xlabel('Channel number')
         xdata = np.delete(T_hist[1],0)
         ydata = T_hist[0]
-        result = data_fit(xdata,ydata,fname[i])
+        result = data_fit(xdata,ydata)
         stds.append(result[1])
         peaks.append(result[0])
         if i==0:
@@ -121,6 +122,8 @@ def main():
         calib_result = T_calib(k,m,xdata,ydata,peaks[i],stds[i])
         results.append(calib_result)
         calib_peaks.append(calib_result[0])
+        if savefig=='y':
+            plt.savefig(f'timePeak_{titles[i]}.png',format='png')
     pdt = PDT(ToF,calib_peaks)
     
     return [results,pdt]
