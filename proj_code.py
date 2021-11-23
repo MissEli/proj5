@@ -47,19 +47,19 @@ for line in f:
         if float(columns[7]) > 10:
             try:
                 
-                if i<1740:
+                if i<1750:
                     p577.append([e, t , mcp])
-                if i>1800 and i<4340:
+                if i>1785 and i<4345:
                     p1815.append([e, t , mcp])
-                if i>4660 and i<7730:
+                if i>4655 and i<7740:
                     a1400.append([e, t , mcp])
-                if i>7760 and i<10720:
+                if i>7760 and i<10735:
                     a1464.append([e, t , mcp])
-                if i>10760 and i<13630:
+                if i>10750 and i<13635:
                     a2050.append([e, t , mcp])
-                if i>13670 and i<17150:
+                if i>13655 and i<17150:
                     a4750.append([e, t , mcp])
-                if i>17170:
+                if i>17165:
                     t2730.append([e, t , mcp])
             except IndexError as ie:    #Only needed to find last index
                 print("*** Index Error: ")
@@ -100,14 +100,18 @@ ToF = []
 PH = []
 ev = [p577,p1815,a1400,a1464,a2050,a4750,t2730]
 # m=0
+# j = 0
 # for list in ev:
+#     ToF = []
+#     PH = []
 #     for x in list:
 #         ToF.append(x[1])
 #         PH.append(x[0])
 #         m+=1
-#     # plt.figure(i)
-#     # plt.hist(ToF,bins=100)
-#     # plt.xlabel('tof')
+#     plt.figure(j)
+#     plt.hist(ToF,bins=100)
+#     plt.xlabel('tof')
+#     j+=1
 
 
 # print(m)
