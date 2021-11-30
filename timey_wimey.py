@@ -65,6 +65,7 @@ def data_fit(xdata,ydata):
 def calibration(xdata,calipeak,calitime):
     k = 1
     m = calitime-calipeak
+    print(m)
     return [k,m]
 
 def T_calib(k,m,xdata,ydata,peak,std):
@@ -91,8 +92,7 @@ def load(fname):
 
 def main():
     #p p a a a a t
-    ToF=[ 2.0998708941461015,3.741226671982719, 4.817580046997456,
-         4.707766474890197, 3.961949251685958, 2.589819098875753, 2.962748483671883]
+    ToF=[2.0998708941461015, 3.741226671982719, 4.817580046997456, 4.707766474890197, 3.961949251685958, 2.589819098875753, 2.962748483671883]
     times = []
     peaks = []
     calib_peaks = []
@@ -108,7 +108,7 @@ def main():
     for i in range(len(times)):
         plt.figure(figsize=(15,15))
         plt.subplot(221)
-        T_hist = plt.hist(times[i],bins=200,range=(60,85))
+        T_hist = plt.hist(times[i],bins=200, range=(0,150))
         plt.suptitle(f'Peak for {titles[i]}')
         plt.ylabel('Pulse height')
         plt.xlabel('Channel number')
@@ -125,10 +125,12 @@ def main():
         if savefig=='y':
             plt.savefig(f'timePeak_{titles[i]}.png',format='png')
     pdt = PDT(ToF,calib_peaks)
-    
+    print(pdt)
+    print(calib_peaks)
     return [results,pdt]
         
-    
+if __name__ == "__main__":
+    main()   
 
 
     
