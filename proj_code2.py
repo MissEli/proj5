@@ -182,10 +182,11 @@ def pulse_plotter(xdata,ydata,fit):
 #%%
 def data_fit(xdata,ydata,plot):
     #Create arrays to hold standard deviation and mean of fitted peaks
-    peak = peak_finder(ydata)
+    peak = peak_finder(ydata) #Find the peak
     std = np.std(ydata)
     mean = xdata[peak[0][0].astype(int)]
     area = np.sum(ydata)
+    #Make new x-vector only over peak area
     x1 = peak[2][0].astype(int)
     x2 = peak[3][0].astype(int)
     x = []
@@ -230,7 +231,7 @@ def histogrammer(xdata,ydata,peaks):
     plt.ylabel('Events')
     plt.show()
 #%%
-def calibration(xdata,calipeaks,calienergies):
+def calibration(calipeaks,calienergies):
     dc = calipeaks[1]-calipeaks[0]
     de = calienergies[1]-calienergies[0]
     k = de/dc
@@ -269,11 +270,11 @@ def main():
     calienergies = [577+Eloss[0],1815+Eloss[1]]
     Etrue = [0.577,1.815,1.4, 1.464, 2.05, 4.75,2.73]
     Etrue = [element*1000 for element in Etrue]
-    energies = []
-    peaks = []
-    calib_peaks = []
-    calib_means = []
-    stds = []
+    energies = [] #Array to hold column vectors with pulse heights
+    peaks = [] #Array to hold the channels with peaks
+    calib_peaks = [] #Channel for peaks used in calibration
+    calib_means = [] #Vector to hold the means of peaks in keV
+    stds = [] #Vector to hold the standard deviation in channels
     titles = ['p577','p1815','a1400','a1464','a2050','a4750','t2730']
     for name in fname:
         energy = load(name)
@@ -283,7 +284,7 @@ def main():
     phd = []
     savefig = input('Save figures? [y/n]: ') #User choses to save figures or not
     for i in range(len(energies)):
-        E_hist = np.histogram(energies[i],bins=5000,range=(0,200))
+        E_hist = np.histogram(energies[i],bins=5000,range=(0,200))  
         xdata = np.delete(E_hist[1],0)
         ydata = E_hist[0]
         result = data_fit(xdata,ydata,0)
@@ -291,8 +292,7 @@ def main():
         peaks.append(result[0])
         if (i==0) or (i==1):
             calib_peaks.append(result[0])
-    
-    k, m = calibration(xdata,calib_peaks,calienergies)
+    k, m = calibration(calib_peaks,calienergies)
     
     for i in range(len(energies)):
         plt.figure(figsize=(15,15))
@@ -307,6 +307,7 @@ def main():
         calib_result = E_calib(k,m,xdata,ydata,peaks[i],stds[i])
         results.append(calib_result)
         calib_means.append(calib_result[0])
+
         if savefig=='y':
             plt.savefig(f'timePeak_{titles[i]}.png',format='png')
     
