@@ -17,10 +17,11 @@ def ff(x, *params):
     pdf = norm.pdf(x,params[1],params[2])*params[0] + params[3]
     return pdf
 
-def pulse_plotter(xdata,ydata,fit):
+def pulse_plotter(xdata,ydata,lims,fit):
     plt.subplot(222)
     plt.plot(xdata,ydata,'b')
     plt.plot(xdata,fit,'r')
+    plt.xlim(lims)
     plt.xlabel('Channel number')
     plt.ylabel('Pulse height')
 
@@ -52,9 +53,9 @@ def data_fit(xdata,ydata):
     except RuntimeError:
         print('Could not find optimal parameters for peak')
         params = p0 #Keep initial guess as fitting parameters for Gaussian
-    
+    lims = [peak[2][0],peak[3][0]]
     #Plotting
-    pulse_plotter(xdata,ydata,ff(xdata,*params))
+    pulse_plotter(xdata,ydata,lims,ff(xdata,*params))
     #Save figures if savefig is given as "y"
         
             
@@ -108,7 +109,7 @@ def main():
     for i in range(len(times)):
         plt.figure(figsize=(15,15))
         plt.subplot(221)
-        T_hist = plt.hist(times[i],bins=200, range=(0,150))
+        T_hist = plt.hist(times[i],bins=2000, range=(0,150))
         plt.suptitle(f'Peak for {titles[i]}')
         plt.ylabel('Pulse height')
         plt.xlabel('Channel number')

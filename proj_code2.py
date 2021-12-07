@@ -3,7 +3,9 @@
 # A program that will read data from file and plot the channels and events
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as pltp
 from scipy.signal import find_peaks
+import scipy.constants as sc
 from scipy.stats import norm as norm
 from scipy.optimize import curve_fit
 from mpl_toolkits.mplot3d import Axes3D
@@ -182,10 +184,11 @@ def pulse_plotter(xdata,ydata,fit):
 #%%
 def data_fit(xdata,ydata,plot):
     #Create arrays to hold standard deviation and mean of fitted peaks
-    peak = peak_finder(ydata)
+    peak = peak_finder(ydata) #Find the peak
     std = np.std(ydata)
     mean = xdata[peak[0][0].astype(int)]
     area = np.sum(ydata)
+    #Make new x-vector only over peak area
     x1 = peak[2][0].astype(int)
     x2 = peak[3][0].astype(int)
     x = []
@@ -200,6 +203,7 @@ def data_fit(xdata,ydata,plot):
         params, cov = fitted
         mean = params[1] #Extract channel using index from params
         std = params[2]
+        mean_err = np.sqrt(cov[1,1])
     #Sometimes fitting doesn't work but we don't want the program to stop
     except RuntimeError:
         print('Could not find optimal parameters for peak')
@@ -212,7 +216,7 @@ def data_fit(xdata,ydata,plot):
         
             
     
-    result = [mean,std]
+    result = [mean,std,mean_err]
     return result
 #%%
 #Peak plotter
@@ -221,97 +225,224 @@ def histogrammer(xdata,ydata,peaks):
     x_p = []
     for p in peaks:
         y_p.append(ydata[p]+5)
-        x_p.append(xdata[p])
-        x = np.delete(xdata,0)    
-    plt.plot(x,ydata)
+        x_p.append(xdata[p])   
+    plt.plot(xdata,ydata)
     plt.plot(x_p,y_p,color='r',marker='v',linestyle='None')
 
     plt.xlabel('Energy channel')
     plt.ylabel('Events')
     plt.show()
 #%%
-def calibration(xdata,calipeaks,calienergies):
-    dc = calipeaks[1]-calipeaks[0]
-    de = calienergies[1]-calienergies[0]
-    k = de/dc
-    m = calienergies[0]-k*calipeaks[0]
+def calibration(calipeaks,calienergies):
+    k = []
+    m = []
+    if np.shape(calipeaks) != (1,1):
+        dc = calipeaks[1]-calipeaks[0]
+        de = calienergies[1]-calienergies[0]
+        k.append(de/dc)
+        m.append(calienergies[0]-k[0]*calipeaks[0])
+    else:
+        for i in range(3):
+            dc = calipeaks[1][i]-calipeaks[0][i]
+            de = calienergies[1]-calienergies[0]
+            k.append(de/dc)
+            m.append(calienergies[0]-k[i]*calipeaks[0][i])
     return [k,m]
 
 def E_calib(k,m,xdata,ydata,peak,std):
     energies = [x*k+m for x in xdata]
     E_peak = peak*k+m
-    E_std = std*k+m
-    plt.subplot(212)
-    plt.plot(energies,ydata,'-')
-    plt.xlabel('Time [ns]')
-    plt.ylabel('Pulse height')
-    output = [E_peak,E_std]
+    E_std = std*k
+    # plt.subplot(212)
+    # plt.plot(energies,ydata,'-')
+    # plt.xlabel('Time [ns]')
+    # plt.ylabel('Pulse height')
+    output = [E_peak,E_std,energies]
     return output
-
+#%%
 def PHD(E,peaks,Eloss):
     E_exp=[] #Energy with losses accounted
-    for i in range(len(peaks)):
-        E_exp.append(peaks[i]-Eloss[i])
-
-    phd = [element-E_exp[i] for i, element in enumerate(E)] 
+    phd = [element+Eloss[i]-peaks[i][0] for i, element in enumerate(E)] 
     return phd
 
 def load(fname):
     file = np.loadtxt(fname, dtype=float,delimiter=',', skiprows=1)
     E = file[:,0]
     return E
-
+#%%
+def get_data(fnames):
+    energies = []
+    for name in fname:
+        energy = load(name)
+        energies.append(energy)
+    ydata = []
+    for i in range(len(energies)):
+        E_hist = plt.hist(energies[i],bins=5000,range=(0,200))  
+        if i == 0:
+            xdata = [e+0.02 for e in E_hist[1]]
+            xdata = np.delete(xdata,len(xdata)-1)
+        ydata.append(E_hist[0])
+    return np.vstack((xdata,ydata))
+    
 def main():
     #Eloss = [-6.1909968, -3.1023139999999997, -32.09591, -31.536043, -27.466562999999996,
-    #     -16.584065999999998, -4.685778]
     Eloss = [-0.0061909968, -0.0031023139999999997, -0.03209591, -0.031536043, -0.027466562999999996, -0.016584065999999998, -0.004685778]
     Eloss = [e*1000 for e in Eloss]
     calienergies = [577+Eloss[0],1815+Eloss[1]]
     Etrue = [0.577,1.815,1.4, 1.464, 2.05, 4.75,2.73]
     Etrue = [element*1000 for element in Etrue]
-    energies = []
-    peaks = []
-    calib_peaks = []
-    calib_means = []
-    stds = []
+    E_det = [E+Eloss[i] for i, E in enumerate(Etrue)]
+    #For converting energy to time
+    m = [938.27, 938.27, 3728.4, 3728.4, 3728.4, 3728.4, 2809.41] # MeV
+    m = [sc.e*mass*10**6/(sc.c**2) for mass in m]
+    conv = [(mass/2)**(1/2)*39.15*10**(-3) for mass in m]
+    
+    
+    #energies = [] #Array to hold column vectors with pulse heights
+    Peaks = []
+    peaks = [] #Array to hold the channels with peaks
+    calib_peaks = [] #Channel for peaks used in calibration
+    calib_means = [] #Vector to hold the means of peaks in keV
+    stds = [] #Vector to hold the standard deviation in channels
+    mean_errs = []
     titles = ['p577','p1815','a1400','a1464','a2050','a4750','t2730']
-    for name in fname:
-        energy = load(name)
-        energies.append(energy)
-    # rows, columns = times.shape
+    # for name in fname:
+    #     energy = load(name)
+    #     energies.append(energy)
+    # rows, columns = times.shape#     -16.584065999999998, -4.685778]
+   
     results=[]
     phd = []
     savefig = input('Save figures? [y/n]: ') #User choses to save figures or not
-    for i in range(len(energies)):
-        E_hist = np.histogram(energies[i],bins=5000,range=(0,200))
-        xdata = np.delete(E_hist[1],0)
-        ydata = E_hist[0]
-        result = data_fit(xdata,ydata,0)
+    # ydata = []
+    # for i in range(len(energies)):
+    #     E_hist = plt.hist(energies[i],bins=5000,range=(0,200))  
+    #     if i == 0:
+    #         xdata = [e+0.02 for e in E_hist[1]]
+    #         xdata = np.delete(xdata,len(xdata)-1)
+    #     ydata.append(E_hist[0])
+    data = get_data(fname)
+    xdata = data[0,:]
+    ydata = data[1:,:]
+    for i in range(len(ydata)):
+        result = data_fit(xdata,ydata[i],0)
         stds.append(result[1])
         peaks.append(result[0])
-        if (i==0) or (i==1):
-            calib_peaks.append(result[0])
+        mean_errs.append(result[2])
+        if (i==0):
+            calib_peaks.append(peaks[i]) #, peaks[i]-stds[i],peaks[i]+stds[i]])
+        elif (i==1):
+            calib_peaks.append(peaks[i]) #, peaks[i]+stds[i],peaks[i]-stds[i]])
+    k, m = calibration(calib_peaks,calienergies)
+    print([k,m])
     
-    k, m = calibration(xdata,calib_peaks,calienergies)
+    #Try error for k and m 
+    p1 = -(calienergies[1]-calienergies[0])/(peaks[1]-peaks[0])**(2)
+    p2 = +(calienergies[1]-calienergies[0])/(peaks[1]-peaks[0])**(2)
+    k_err= np.sqrt((p1*mean_errs[0])**2 + (p2*mean_errs[1]**2))
+    m_err = np.sqrt((peaks[0]*k_err)**2 + (mean_errs[0]*k[0])**2)
     
-    for i in range(len(energies)):
+    # k = line[0]
+    # m = line[1]
+    energyx = []
+    
+    for i in range(len(ydata)):
         plt.figure(figsize=(15,15))
         plt.subplot(221)
-        E_hist = plt.hist(energies[i],bins=5000,range=(0,200))
+        plt.plot(xdata,ydata[i])
         plt.suptitle(f'Peak for {titles[i]}')
         plt.ylabel('Pulse height')
         plt.xlabel('Channel number')
-        xdata = np.delete(E_hist[1],0)
-        ydata = E_hist[0]
-        result = data_fit(xdata,ydata,1)
-        calib_result = E_calib(k,m,xdata,ydata,peaks[i],stds[i])
-        results.append(calib_result)
-        calib_means.append(calib_result[0])
+        result = data_fit(xdata,ydata[i],1)
+        calib=[] #Hold 3 calibmeans
+        for j in range(len(k)):
+            peaks[0]=calib_peaks[0] #[j]
+            peaks[1]=calib_peaks[1] #[j]
+            print(peaks)
+            if i==0:
+                Peaks.append(peaks)
+            calib_result = E_calib(k[j],m[j],xdata,ydata[i],peaks[i],stds[i])
+        #calib_result.append(conv[i]/((sc.e*10**3*stds[i])**(1/2)))
+            results.append(calib_result[0:2])
+            energyx.append(calib_result[2])
+            calib.append(calib_result[0])
+        calib_means.append(calib)
         if savefig=='y':
             plt.savefig(f'timePeak_{titles[i]}.png',format='png')
+            
+    for i in range(len(k)):
+        plt.figure(figsize=(12,10))
+        calibpts = []
+        for j in range(7):
+            calibpts.append(calib_means[j]) #[i])
+        plt.plot(peaks,calibpts,'o',markersize=3,label='Particle energies (calibrated)')
+        #plt.plot(Peaks[i],E_det,'*',markersize=3)
+        y = [k[i]*x + m[i] for x in xdata]
+        plt.plot(xdata,y,label='Calibration line')
+        plt.title('Calibration with only protons')
+        plt.xlabel('Pulse height')
+        plt.ylabel('Energy [keV]')
+        plt.legend()
+        #plt.savefig(f'calib_{i}.pdf',format='pdf')
+        phd.append(PHD(Etrue,calib_means,Eloss))
+    plt.figure()
+    plt.plot(calib_means,E_det,'*',markersize=3,label='Energy_true at calibrated peak energy')
+    plt.plot(E_det,E_det,linewidth=1,label='y=x line')
+    plt.title('Calibration using only protons')
+    plt.legend()
+    plt.ylabel('Energy_true')
+    plt.xlabel('Energy_measured')
+    plt.savefig('e_vs_e_prot.pdf',format='pdf')
+    # for i in range(len(energyx)):
+    #     plt.figure()
+    #     for j in range(len(ydata)):
+    #         plt.plot(energyx[i],ydata[j])
+    #     plt.xlabel('Energy [keV]')
+    #     plt.title(f'Calibrated histogram in case {i+1}')
     
-    phd = PHD(Etrue,calib_means,Eloss)
+    A = np.vstack([peaks,np.ones(len(peaks))]).T
+    newfit = np.linalg.lstsq(A,E_det,rcond=None)
+    newnewfit = np.polyfit(peaks,E_det,1,rcond=None,cov=True)
+    gain, intercept = newfit[0]
+    gaingain, interintercept = newnewfit[0]
+    sigma_gain = np.sqrt(newnewfit[1][0,0])
+    sigma_inter = np.sqrt(newnewfit[1][1,1])
+    plt.figure()
+    yy = [gain*x + intercept for x in xdata]
+    plt.plot(xdata,yy,linewidth=1,label='Calibration line')
+    plt.plot(peaks,E_det,'*',markersize=2,label='True energy')
+    plt.title('Calibration using all particles')
+    plt.ylabel('Energy_true')
+    plt.xlabel('Pulse Height')
+    plt.legend()
+    plt.savefig('lsqfit.pdf',format='pdf')
     
+    peakpeak = [gain*p+m for p in peaks]
+    plt.figure()
+    plt.plot(peakpeak,E_det,'*',markersize=3,label='Energy_true at calibrated peak energy')
+    plt.plot(E_det,E_det,linewidth=1,label='y=x line')
+    plt.title('Calibration using all particles')
+    plt.legend()
+    plt.ylabel('Energy_true')
+    plt.xlabel('Energy_measured')
+    plt.savefig('e_vs_e.pdf',format='pdf')
+    
+    
+    
+    
+    plt.figure()
+    plt.title('Comparing gain and intercept between calibration methods')
+    plt.ylabel('Intercept')
+    plt.xlabel('Gain')
+    plt.errorbar(k,m,yerr=m_err,xerr=k_err,label='Proton only calibration +/- 1\u03c3')
+    plt.errorbar(gaingain,interintercept,yerr=sigma_inter,xerr=sigma_gain,label='All particles calibration +/- 1\u03c3')
+    ax = plt.gca()
+    ellipse1 = pltp.Ellipse((k,m),2*k_err,2*m_err,edgecolor='r',fc='None')
+    ellipse2 = pltp.Ellipse((gaingain,interintercept),2*sigma_gain,2*sigma_inter,edgecolor='r',fc='None')
+    ax.add_patch(ellipse1)
+    ax.add_patch(ellipse2)
+    plt.legend()
+    plt.savefig('km_error1sigma.svg',format='svg')
     return [results,phd]
     # E_hist = plt.hist(E,bins = 5000, range=(0,200))
     # xdata = E_hist[1]
@@ -344,3 +475,5 @@ def main():
 # plt.plot(x*k+m,E_hist[0],'-')
 # plt.xlabel('Energy [keV]')
 # plt.ylabel('Events')
+
+
