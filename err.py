@@ -18,7 +18,7 @@ rel_err_l = []
 dEE = [] #Experimental points
 for i in range(len(E)):
     #dEE.append(dE[i]/E[i])
-    dEE.append(0.05)
+    dEE.append(0.04)
     rel_err.append(((dl/l)**2 + (dEE[i]/2)**2)**(1/2))
     
 
@@ -48,7 +48,7 @@ plt.ylabel('\u0394t / t')
 plt.xlabel('\u0394E / E')
 plt.legend(bbox_to_anchor=(1.05, 1),
                          loc='upper left', borderaxespad=0.)
-plt.savefig('Rel_err_2.svg', bbox_inches='tight',format='svg')
+plt.savefig('Rel_err_3.svg', bbox_inches='tight',format='svg')
 
  
 

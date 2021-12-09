@@ -234,7 +234,7 @@ plt.ylabel('Energy_true')
 plt.xlabel('Pulse Height')
 plt.legend()
 
-peakpeak = [gain*p+m for p in peaks_C]
+peakpeak = [gain*p+intercept for p in peaks_C]
 plt.figure()
 plt.plot(peakpeak,E_det,'*',markersize=3,label='Energy_true at calibrated peak energy')
 plt.plot(E_det,E_det,linewidth=1,label='y=x line')
