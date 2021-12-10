@@ -27,12 +27,16 @@ def get_data(fnames):
         energy = load(name)
         energies.append(energy)
     ydata = []
+    labels = ['Proton577','Proton1815','\u03b11400','\u03b11464','\u03b12050','\u03b14750','Triton2730']
     for i in range(len(energies)):
-        E_hist = plt.hist(energies[i],bins=5000,range=(0,200))  
+        E_hist = plt.hist(energies[i],bins=5000,range=(0,200),label=labels[i])  
         if i == 0:
             xdata = [e+0.02 for e in E_hist[1]]
             xdata = np.delete(xdata,len(xdata)-1)
         ydata.append(E_hist[0])
+    plt.xlabel('Pulse height')
+    plt.ylabel('Count')
+    plt.legend()
     return np.vstack((xdata,ydata))
 
 
@@ -57,16 +61,16 @@ def peak_finder(ydata,height=50,prominence=30,distance=10):
     return peak_data
     
 #Plots a pulse with a data fit distribution. Subplotted with original histogram peak
-def pulse_plotter(xdata,ydata,fit):
+def pulse_plotter(xdata,ydata,fit,xlabel):
     plt.subplot(222)
     plt.plot(xdata,ydata,'b')
     plt.plot(xdata,fit,'r')
-    
-    plt.xlabel('Channel number')
-    plt.ylabel('Pulse height')
+    print(xlabel)
+    plt.xlabel(xlabel)
+    plt.ylabel('Counts')
     
 #Function to fit a normal distribution onto a histogram peak
-def data_fit(xdata,ydata,plot):
+def data_fit(xdata,ydata,plot,xlabel):
     #Create arrays to hold standard deviation and mean of fitted peaks
     peak = peak_finder(ydata) #Find the peak
     std = np.std(ydata)
@@ -80,7 +84,7 @@ def data_fit(xdata,ydata,plot):
     for i in range(x1,x2+1):
         x.append(xdata[i])
         y.append(ydata[i])
-    #Initial guess for fitting using known parameters
+    #Initial guess fory fitting using known parameters
     p0 = [area,mean,std,0]                   
     try:
         fitted = curve_fit(ff,x,y, p0)
@@ -95,7 +99,7 @@ def data_fit(xdata,ydata,plot):
     
     #Plotting
     if plot:    
-        pulse_plotter(x,y,ff(x,*params))
+        pulse_plotter(x,y,ff(x,*params),xlabel)
     #Save figures if savefig is given as "y"
         
     result = [mean,std,mean_err]
@@ -118,10 +122,6 @@ def E_calib(k,m,xdata,ydata,peak,std):
     energies = [x*k+m for x in xdata]
     E_peak = peak*k+m
     E_std = std*k
-    # plt.subplot(212)
-    # plt.plot(energies,ydata,'-')
-    # plt.xlabel('Time [ns]')
-    # plt.ylabel('Pulse height')
     output = [E_peak,E_std,energies]
     return output
 
@@ -163,14 +163,12 @@ mean_errs = [] #Error in mean estimated
 
 peaks_E = [] #Vector to hold the means of peaks in keV   
 results=[] #Vector for final results
-phd = [] #Pulse height defect vector
-
 #Load data and store x and y values
 data = get_data(fnames)
 xdata = data[0,:]
 ydata = data[1:,:]
 for i in range(len(ydata)):
-    result = data_fit(xdata,ydata[i],0)
+    result = data_fit(xdata,ydata[i],0,'')
     stds.append(result[1])
     peaks_C.append(result[0])
     mean_errs.append(result[2])
@@ -184,22 +182,35 @@ print([k,m])
 #Try error for k and m using normal propagation
 p1 = -(calienergies[1]-calienergies[0])/(peaks_C[1]-peaks_C[0])**(2)
 p2 = +(calienergies[1]-calienergies[0])/(peaks_C[1]-peaks_C[0])**(2)
-k_err= np.sqrt((p1*mean_errs[0])**2 + (p2*mean_errs[1]**2))
-m_err = np.sqrt((peaks_C[0]*k_err)**2 + (mean_errs[0]*k)**2)
+p3 = +1/(peaks_C[1]-peaks_C[0])
+p4 = -1/(peaks_C[1]-peaks_C[0])
+k_err= np.sqrt((p1*mean_errs[0])**2 + (p2*mean_errs[1]**2) + 2*(0.04*p3)**2)
+m_err = np.sqrt(0.04**2 + (peaks_C[0]*k_err)**2 + (mean_errs[0]*k)**2)
+
+peak_errors = [np.sqrt((k*mean_errs[i])**2 + \
+                       (k_err*peaks_C[i])**2 + \
+                           m_err**2) for i in range(len(peaks_C))]
 
 #%% Translate from channels to energy and get fitting plots
+savefig = input('Save figures?: [y/n]')
 for i in range(len(ydata)):
-        plt.figure(figsize=(15,15))
+        plt.figure(figsize=(10,10))
         plt.subplot(221)
         plt.plot(xdata,ydata[i])
         plt.suptitle(f'Peak for {titles[i]}')
-        plt.ylabel('Pulse height')
-        plt.xlabel('Channel number')
-        result = data_fit(xdata,ydata[i],1)
+        plt.ylabel('Counts')
+        plt.xlabel('Pulse Height')
+        
+        result = data_fit(xdata,ydata[i],1,'Pulse Height')
+        if savefig:
+            plt.savefig(f'{titles[i]}.svg',bbox_inches='tight',format='svg')
         calib_result = E_calib(k,m,xdata,ydata[i],peaks_C[i],stds[i])
         results.append(calib_result[0:2])
         peaks_E.append(calib_result[0])
-        
+phd = PHD(E_det,peaks_E)
+phd_err = [np.sqrt(peak_errors[i]**2 + 0.04**2) for i in range(len(peak_errors))]
+
+#%% Final histogram, calibration 1
 #%%
 #Plot calibrations and get PHD       
 plt.figure(figsize=(12,10))
@@ -211,7 +222,7 @@ plt.xlabel('Pulse height')
 plt.ylabel('Energy [keV]')
 plt.legend()
 #plt.savefig(f'calib_{i}.pdf',format='pdf')
-phd.append(PHD(E_det,peaks_E))
+#phd.append(PHD(E_det,peaks_E))
 
 plt.figure()
 plt.plot(peaks_E,E_det,'*',markersize=3,label='Energy_true at calibrated peak energy')
@@ -220,11 +231,62 @@ plt.title('Calibration using only protons')
 plt.legend()
 plt.ylabel('Energy_true')
 plt.xlabel('Energy_measured')
+x_energy = calib_result[2]
+labels = ['Proton577','Proton1815','\u03b11400','\u03b11464','\u03b12050','\u03b14750','Triton2730']
+plt.figure()
+for i in range(len(ydata)):
+    plt.plot(x_energy,ydata[i],label=labels[i])
+plt.title('Energy histogram')
+plt.xlabel('Energy [keV]')
+plt.ylabel('Count')
+plt.legend()
+plt.savefig('energy_hist.svg',format='svg')
+
+for i in range(len(ydata)):
+        plt.figure(figsize=(10,10))
+        plt.subplot(221)
+        plt.plot(x_energy,ydata[i])
+        plt.suptitle(f'Peak for {titles[i]}')
+        plt.ylabel('Counts')
+        plt.xlabel('Energy [keV]')
+        
+        result = data_fit(x_energy,ydata[i],1,'Energy [keV]')
+        if savefig:
+            plt.savefig(f'{titles[i]}_E1.svg',bbox_inches='tight',format='svg')
 #%% Fitting with all points and comparing k,m between fits
+new_results = []
+new_peaks_E = []
 newfit = np.polyfit(peaks_C,E_det,1,rcond=None,cov=True)
 gain, intercept = newfit[0]
 sigma_gain = np.sqrt(newfit[1][0,0])
 sigma_inter = np.sqrt(newfit[1][1,1])
+
+for i in range(len(ydata)):
+    new_calib_result = E_calib(gain,intercept,xdata,ydata[i],peaks_C[i],stds[i])
+    new_results.append(new_calib_result[0:2])
+    new_peaks_E.append(new_calib_result[0])
+new_x_energy = new_calib_result[2]
+
+new_peak_errors = [np.sqrt((gain*mean_errs[i])**2 + \
+                       (sigma_gain*peaks_C[i])**2 + \
+                           sigma_inter**2) for i in range(len(peaks_C))]
+
+for i in range(len(ydata)):
+    plt.figure(figsize=(10,10))
+    plt.subplot(221)
+    plt.plot(new_x_energy,ydata[i])
+    plt.suptitle(f'Peak for {titles[i]}')
+    plt.ylabel('Counts')
+    plt.xlabel('Energy [keV]')
+    new_result = data_fit(new_x_energy,ydata[i],1,'Energy [keV]')
+    if savefig:
+        plt.savefig(f'{titles[i]}_E.svg',bbox_inches='tight',format='svg')
+        
+new_phd = PHD(E_det,new_peaks_E)
+new_phd_err = [np.sqrt(new_peak_errors[i]**2 + 0.04**2) for i in range(len(peak_errors))]
+
+
+   
 plt.figure()
 yy = [gain*x + intercept for x in xdata]
 plt.plot(xdata,yy,linewidth=1,label='Calibration line')
@@ -234,9 +296,12 @@ plt.ylabel('Energy_true')
 plt.xlabel('Pulse Height')
 plt.legend()
 
-peakpeak = [gain*p+m for p in peaks_C]
+
+
+
+
 plt.figure()
-plt.plot(peakpeak,E_det,'*',markersize=3,label='Energy_true at calibrated peak energy')
+plt.plot(new_peaks_E,E_det,'*',markersize=3,label='Energy_true at calibrated peak energy')
 plt.plot(E_det,E_det,linewidth=1,label='y=x line')
 plt.title('Calibration using all particles')
 plt.legend()
@@ -254,5 +319,14 @@ ellipse2 = pltp.Ellipse((gain,intercept),2*sigma_gain,2*sigma_inter,edgecolor='r
 ax.add_patch(ellipse1)
 ax.add_patch(ellipse2)
 plt.legend()
-
+#%% Final histogram with calibration 2
+labels = ['Proton577','Proton1815','\u03b11400','\u03b11464','\u03b12050','\u03b14750','Triton2730']
+plt.figure()
+for i in range(len(ydata)):
+    plt.plot(new_x_energy,ydata[i],label=labels[i])
+plt.title('Energy histogram')
+plt.xlabel('Energy [keV]')
+plt.ylabel('Count')
+plt.legend()
+plt.savefig('energy_hist2.svg',format='svg')
 
