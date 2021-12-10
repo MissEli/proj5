@@ -27,7 +27,7 @@ dls = [0.5,1,1.5,1.95,2.5] #Test these dl [mm]
 for i in range(len(dls)):
     rel_err_l.append(round(dls[i]/l,3))
                      
-dEEs = np.linspace(0,0.1,1000) #x vector
+dEEs = np.linspace(0,0.2,1000) #x vector
 
 rel_errors = np.zeros((len(dls),len(dEEs)))
 
@@ -48,7 +48,13 @@ plt.ylabel('\u0394t / t')
 plt.xlabel('\u0394E / E')
 plt.legend(bbox_to_anchor=(1.05, 1),
                          loc='upper left', borderaxespad=0.)
+
+plt.savefig('Rel_err_2.svg', bbox_inches='tight',format='svg')
+ToF=[3.741226671982719,2.0998708941461015, 4.817580046997456, 4.707766474890197, 3.961949251685958, 2.589819098875753, 2.962748483671883]
+err_abs = [rel_err[i]*t for t in ToF]
+
 plt.savefig('Rel_err_3.svg', bbox_inches='tight',format='svg')
+
 
  
 
