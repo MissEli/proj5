@@ -48,9 +48,13 @@ plt.ylabel('\u0394t / t')
 plt.xlabel('\u0394E / E')
 plt.legend(bbox_to_anchor=(1.05, 1),
                          loc='upper left', borderaxespad=0.)
+
 plt.savefig('Rel_err_2.svg', bbox_inches='tight',format='svg')
 ToF=[3.741226671982719,2.0998708941461015, 4.817580046997456, 4.707766474890197, 3.961949251685958, 2.589819098875753, 2.962748483671883]
 err_abs = [rel_err[i]*t for t in ToF]
+
+plt.savefig('Rel_err_3.svg', bbox_inches='tight',format='svg')
+
 
  
 

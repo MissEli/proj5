@@ -55,7 +55,7 @@ def data_fit(xdata,ydata):
         params = p0 #Keep initial guess as fitting parameters for Gaussian
     lims = [peak[2][0],peak[3][0]]
     #Plotting
-    pulse_plotter(xdata,ydata,lims,ff(xdata,*params))
+    #pulse_plotter(xdata,ydata,lims,ff(xdata,*params))
     #Save figures if savefig is given as "y"
         
             
@@ -93,7 +93,8 @@ def load(fname):
 
 def main():
     #p p a a a a t
-    ToF=[2.0998708941461015, 3.741226671982719, 4.817580046997456, 4.707766474890197, 3.961949251685958, 2.589819098875753, 2.962748483671883]
+    ToF=[2.0569616549298337, 3.664777595671451, 4.719136521132885, 4.611566904522071, 3.880989880003998, 2.536898146663733, 2.9022070076326107]
+    E = [1811.8976859999998, 570.8090032, 1370.5776578369482, 1428.936015304666, 2023.2640121302848, 4751.052015174993, 2714.916596558814]
     times = []
     peaks = []
     calib_peaks = []
@@ -107,12 +108,12 @@ def main():
     pdt = []
     savefig = input('Save figures? [y/n]: ') #User choses to save figures or not
     for i in range(len(times)):
-        plt.figure(figsize=(15,15))
-        plt.subplot(221)
+        # plt.figure(figsize=(15,15))
+        # plt.subplot(221)
         T_hist = plt.hist(times[i],bins=2000, range=(0,150))
-        plt.suptitle(f'Peak for {titles[i]}')
-        plt.ylabel('Pulse height')
-        plt.xlabel('Channel number')
+        # plt.suptitle(f'Peak for {titles[i]}')
+        # plt.ylabel('Pulse height')
+        # plt.xlabel('Channel number')
         xdata = np.delete(T_hist[1],0)
         ydata = T_hist[0]
         result = data_fit(xdata,ydata)
@@ -128,6 +129,26 @@ def main():
     pdt = PDT(ToF,calib_peaks)
     print(pdt)
     print(calib_peaks)
+
+    c = ['b', 'g','r','c','m','k','y']
+    plt.figure()
+    plt.plot(E[:2],pdt[:2], label='proton')
+    plt.plot(E[2:6],pdt[2:6],label='alpha')
+    for i in range(len(pdt)):
+        plt.plot(E[i],pdt[i],color=c[i],marker='*', label=titles[i])
+    plt.legend()
+    plt.xlabel('measured energy')
+    plt.ylabel('PDT')
+
+    plt.figure()
+    for i in range(len(calib_peaks)):
+        plt.plot(E[i],calib_peaks[i],color=c[i] ,marker='*', label=titles[i]+' m')
+        plt.plot(E[i],ToF[i],color=c[i],marker='o', label=titles[i]+' t')
+    plt.legend()
+    plt.xlabel('measured energy')
+    plt.ylabel('ToF')
+
+    plt.show()
     return [results,pdt]
         
 if __name__ == "__main__":
