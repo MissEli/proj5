@@ -7,7 +7,7 @@ Script for error estimation in ToF
 
 import numpy as np
 import matplotlib.pyplot as plt
-l = 39.15 #mm
+l = 38.35 #mm
 dl = 1.95 #mm
 
 E = [570.8090032, 1811.897686 , 1367.90409  , 1432.463957 ,
