@@ -132,21 +132,21 @@ def main():
 
     c = ['b', 'g','r','c','m','k','y']
     plt.figure()
-    plt.plot(E[:2],pdt[:2], label='proton')
-    plt.plot(E[2:6],pdt[2:6],label='alpha')
+    plt.plot(E[:2],pdt[:2],'k-', label='proton')
+    plt.plot(E[2:6],pdt[2:6],'k--', label='alpha')
     for i in range(len(pdt)):
         plt.plot(E[i],pdt[i],color=c[i],marker='*', label=titles[i])
     plt.legend()
-    plt.xlabel('measured energy')
-    plt.ylabel('PDT')
+    plt.xlabel('measured energy [keV]')
+    plt.ylabel('PDT [ns]')
 
     plt.figure()
     for i in range(len(calib_peaks)):
         plt.plot(E[i],calib_peaks[i],color=c[i] ,marker='*', label=titles[i]+' m')
         plt.plot(E[i],ToF[i],color=c[i],marker='o', label=titles[i]+' t')
     plt.legend()
-    plt.xlabel('measured energy')
-    plt.ylabel('ToF')
+    plt.xlabel('measured energy [keV]')
+    plt.ylabel('ToF [ns]')
 
     plt.show()
     return [results,pdt]
