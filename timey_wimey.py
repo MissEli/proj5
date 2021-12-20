@@ -10,22 +10,19 @@ import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from scipy.stats import norm as norm
 from scipy.optimize import curve_fit
-#%%
-fname = ['p1815.txt','p577.txt','a1400.txt','a1464.txt','a2050.txt','a4750.txt','t2730.txt']
-
+#%% Functions
 def ff(x, *params):
     pdf = norm.pdf(x,params[1],params[2])*params[0] + params[3]
     return pdf
 
-def pulse_plotter(xdata,ydata,lims,fit):
+def pulse_plotter(xdata,ydata,fit,xlabel):
     plt.subplot(222)
     plt.plot(xdata,ydata,'b')
     plt.plot(xdata,fit,'r')
-    plt.xlim(lims)
-    plt.xlabel('Channel number')
+    plt.xlabel(xlabel)
     plt.ylabel('Pulse height')
 
-def peak_finder(ydata,height=15,prominence=15,distance=20):
+def peak_finder(ydata,height=15,prominence=15,distance=50):
     peaks = find_peaks(ydata,height=height,prominence=prominence,distance=distance)
     peak_index = peaks[0]
     peak_heights = peaks[1]['peak_heights']
@@ -35,13 +32,20 @@ def peak_finder(ydata,height=15,prominence=15,distance=20):
     peak_data = np.vstack((peak_index,peak_heights,left_bases,right_bases))
     return peak_data
     
-def data_fit(xdata,ydata):
+def data_fit(xdata,ydata,plot,xlabel):
     #Create arrays to hold standard deviation and mean of fitted peaks
     peak = peak_finder(ydata)
     std = np.std(ydata)
     mean = xdata[peak[0][0].astype(int)]
     area = np.sum(ydata)
-
+    
+    x1 = peak[2][0].astype(int)
+    x2 = peak[3][0].astype(int)
+    x = []
+    y=[]
+    for i in range(x1,x2+1):
+        x.append(xdata[i])
+        y.append(ydata[i])
     #Initial guess for fitting using known parameters
     p0 = [area,mean,std,0]                   
     try:
@@ -49,35 +53,30 @@ def data_fit(xdata,ydata):
         params, cov = fitted
         mean = params[1] #Extract channel using index from params
         std = params[2]
+        mean_err = np.sqrt(cov[1,1])
     #Sometimes fitting doesn't work but we don't want the program to stop
     except RuntimeError:
         print('Could not find optimal parameters for peak')
         params = p0 #Keep initial guess as fitting parameters for Gaussian
-    lims = [peak[2][0],peak[3][0]]
-    #Plotting
-    #pulse_plotter(xdata,ydata,lims,ff(xdata,*params))
-    #Save figures if savefig is given as "y"
+        
+    if plot:    
+        pulse_plotter(x,y,ff(x,*params),xlabel)
         
             
     
-    result = [mean,std]
+    result = [mean,std,mean_err]
     return result
 
 def calibration(xdata,calipeak,calitime):
     k = 1
     m = calitime-calipeak
-    print(m)
     return [k,m]
 
 def T_calib(k,m,xdata,ydata,peak,std):
     times = [x*k+m for x in xdata]
     T_peak = peak*k+m
     T_std = std
-    plt.subplot(212)
-    plt.plot(times,ydata,'-')
-    plt.xlabel('Time [ns]')
-    plt.ylabel('Pulse height')
-    output = [T_peak,std]
+    output = [T_peak,std,times]
     return output
 
 def PDT(ToF,T_peaks):
@@ -91,23 +90,15 @@ def load(fname):
     T = file[:,1]
     return T
 
-def main():
-    #p p a a a a t
-    ToF=[2.0569616549298337, 3.664777595671451, 4.719136521132885, 4.611566904522071, 3.880989880003998, 2.536898146663733, 2.9022070076326107]
-    E = [1811.8976859999998, 570.8090032, 1370.5776578369482, 1428.936015304666, 2023.2640121302848, 4751.052015174993, 2714.916596558814]
+def get_data(fnames):
     times = []
-    peaks = []
-    calib_peaks = []
-    stds = []
-    titles = ['p1815','p577','a1400','a1464','a2050','a4750','t2730']
-    for name in fname:
+    for name in fnames:
         time = load(name)
         times.append(time)
-    # rows, columns = times.shape
-    results=[]
-    pdt = []
-    savefig = input('Save figures? [y/n]: ') #User choses to save figures or not
+    ydata = []
+    labels = ['Proton1815','Proton577','\u03b11400','\u03b11464','\u03b12050','\u03b14750','Triton2730']
     for i in range(len(times)):
+<<<<<<< Updated upstream
         # plt.figure(figsize=(15,15))
         # plt.subplot(221)
         T_hist = plt.hist(times[i],bins=2000, range=(0,150))
@@ -147,13 +138,131 @@ def main():
     plt.legend()
     plt.xlabel('measured energy [keV]')
     plt.ylabel('ToF [ns]')
+=======
+        T_hist = plt.hist(times[i],bins=2000,range=(0,150),label=labels[i])  
+        if i == 0:
+            xdata = [t+0.075 for t in T_hist[1]]
+            xdata = np.delete(xdata,len(xdata)-1)
+        ydata.append(T_hist[0])
+    plt.xlabel('Pulse height')
+    plt.ylabel('Count')
+    plt.legend()
+    return np.vstack((xdata,ydata))
+#%% Load parameters
+#p p a a a a t
+fnames = ['p1815.txt','p577.txt','a1400.txt','a1464.txt','a2050.txt','a4750.txt','t2730.txt']
+ToF=[2.0569616549298337, 3.664777595671451, 4.719136521132885, 4.611566904522071, 3.880989880003998, 2.536898146663733, 2.9022070076326107]
+ToF_err =[0.11239114904430238,0.2002412461030443,0.25785078435268605,0.25197324512672664,0.2120549554229963,0.13861459061648096, 0.15857484730962676]
+E = [1811.8976859999998, 570.8090032, 1370.5776578369482, 1428.936015304666, 2023.2640121302848, 4751.052015174993, 2714.916596558814]
 
-    plt.show()
-    return [results,pdt]
+#%% Load data and fit
+peaks_C = []
+calib_peaks = []
+stds = []
+mean_errs = []
+titles = ['p1815','p577','a1400','a1464','a2050','a4750','t2730']
+
+peaks_T = []
+results=[]
+pdt = []
+
+data = get_data(fnames)
+xdata = data[0,:]
+ydata = data[1:,:]
+
+for i in range(len(ydata)):
+    plt.figure(figsize=(10,10))
+    plt.subplot(221)
+    plt.plot(xdata,ydata[i])
+    plt.suptitle(f'Peak for {titles[i]}')
+    plt.ylabel('Counts')
+    plt.xlabel('Pulse Height')
+    result = data_fit(xdata,ydata[i],1,'Pulse Height')
+    stds.append(result[1])
+    peaks_C.append(result[0])
+    mean_errs.append(result[2])
+    if i==0:
+        k, m = calibration(xdata,peaks_C[0],ToF[0])
+    calib_result = T_calib(k,m,xdata,ydata,peaks_C[i],stds[i])
+    results.append(calib_result[0:2])
+    calib_peaks.append(calib_result[0])
+#%% calculate pdt
+x_time = calib_result[2]
+for i in range(len(ydata)):
+    plt.figure(figsize=(10,10))
+    plt.subplot(221)
+    plt.plot(x_time,ydata[i])
+    plt.suptitle(f'Peak for {titles[i]}')
+    plt.ylabel('Counts')
+    plt.xlabel('Time [ns]')
+    result = data_fit(x_time,ydata[i],1,'Time [ns]')
+    plt.savefig(f'time_{titles[i]}.svg',format='svg')
+pdt = PDT(ToF,calib_peaks)
+
+#Calculate pdt error
+err_m = ToF_err[0]
+err_k = 0
+peak_errs = [np.sqrt(err_x**2 + err_m**2) for err_x in mean_errs]
+pdt_err = [np.sqrt(ToF_err[i]**2 + peak_errs[i]**2) for i in range(len(peak_errs))]
+print(pdt)
+print(calib_peaks)
+#%%
+c = ['b', 'g','r','c','m','k','y']
+plt.figure()
+plt.plot(E[:2],pdt[:2], label='proton')
+plt.plot(E[2:6],pdt[2:6],label='alpha')
+for i in range(len(pdt)):
+    plt.plot(E[i],pdt[i],color=c[i],marker='*', label=titles[i])
+plt.legend()
+plt.xlabel('measured energy')
+plt.ylabel('PDT')
+
+plt.figure()
+for i in range(len(calib_peaks)):
+    plt.plot(E[i],calib_peaks[i],color=c[i] ,marker='*', label=titles[i]+' m')
+    plt.plot(E[i],ToF[i],color=c[i],marker='o', label=titles[i]+' t')
+plt.legend()
+plt.xlabel('measured energy')
+plt.ylabel('ToF')
+plt.show()
+
+peak = peak_finder(ydata[0])
+std = np.std(ydata[0])
+mean = x_time[peak[0][0].astype(int)]
+area = np.sum(ydata[0])
+
+x1 = peak[2][0].astype(int)
+x2 = peak[3][0].astype(int)
+x = []
+y=[]
+for i in range(x1,x2+1):
+    x.append(x_time[i])
+    y.append(ydata[0][i])
+#Initial guess for fitting using known parameters
+p0 = [area,mean,std,0]                   
+try:
+    fitted = curve_fit(ff,x,y, p0)
+    params, cov = fitted
+    mean = params[1] #Extract channel using index from params
+    std = params[2]
+    mean_err = np.sqrt(cov[1,1])
+#Sometimes fitting doesn't work but we don't want the program to stop
+except RuntimeError:
+    print('Could not find optimal parameters for peak')
+    params = p0 #Keep initial guess as fitting parameters for Gaussian
+    
+plt.figure()
+plt.title('Time of flight for p1815')
+plt.plot(x,y,'b')
+plt.plot(x,ff(x,*params),'r')
+plt.axvline(x=ToF[0],color='k')
+plt.xlabel('Time [ns]')
+plt.ylabel('Counts')    
+plt.savefig('timepeak.svg',format='svg')
+
+>>>>>>> Stashed changes
+
         
-if __name__ == "__main__":
-    main()   
-
 
     
 
