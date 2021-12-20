@@ -9,7 +9,7 @@ C = 190 # pF
 d = 0.03 # cm
 mu = 1481
 tau = rho*10**(-12)
-dd = math.sqrt(2*tau*mu*V) # depletion depth
+dd = d # math.sqrt(2*tau*mu*V) # depletion depth
 
 
 Etrue = [0.577,1.815,1.4, 1.464, 2.05, 4.75,2.73]
