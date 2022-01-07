@@ -2,6 +2,10 @@
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+plt.rc('axes',titlesize=12)
+plt.rc('axes',labelsize=12)
+plt.rc('xtick',labelsize=12)
+plt.rc('ytick',labelsize=12)
 # E = mv^2/2
 # Run	p 0.577 MeV	p 1.815 MeV	α 1.4 MeV	α 1.464 MeV	α 2.05 MeV	α 4.75 MeV	3H 2.73 MeV
 
@@ -77,7 +81,7 @@ plt.savefig('Rel_err_2.svg', bbox_inches='tight',format='svg')
 #ToF=[3.741226671982719,2.0998708941461015, 4.817580046997456, 4.707766474890197, 3.961949251685958, 2.589819098875753, 2.962748483671883]
 err_abs = [rel_err[i]*t for t in Tns]
 
-plt.savefig('Rel_err_3.svg', bbox_inches='tight',format='svg')
+plt.savefig('Rel_err_3.png', bbox_inches='tight')
 
 #%% Translate energy data to time
 
@@ -104,15 +108,13 @@ stds = [5.695130399391655,
 12.132465023784567,
 8.295230333120175]
 
-E_measured = np.vstack((Energies,stds)).T
-means = E_measured[:,0]
-stdss = E_measured[:,1]
+
 Velocities = []
 Times = []
 std_T = []
 Means = []
-for i in range(len(means)):
-    spread = [means[i]-stdss[i],means[i],means[i]+stdss[i]]
+for i in range(len(Energies)):
+    spread = [Energies[i]-stds[i],Energies[i],Energies[i]+stds[i]]
     Means.append(spread)
 
 
@@ -141,28 +143,42 @@ plt.savefig('e_to_t.svg',format='svg')
 
 #%% Errorbar plots for tof over energy for theoretical and measured values
 #Convert everything to ns
+#Energy data converted to time
 Times_m = [Times[i][1]*10**9 for i in range(len(Times))]
 std_T = [s*10**9 for s in std_T]
+#Calibrated time data
 calib_time = [9.304,2.057,6.112,5.809,3.918,2.227,2.724]
+calib_errs = [0.11253721916504539,0.11809480829951031,0.11264940708181023,0.11276398118170342,0.11245417181556852,0.1123971190119066,0.11243319370885484]
+
+
+time_diff1 = [calib_time[i]-tof for i, tof in enumerate(Tns)]
+err_t1 = [calib_errs[i]+err for i, err in enumerate(err_abs)]
+time_diff2 = [Times_m[i]-tof for i, tof in enumerate(Tns)]
+err_t2 = [std_T[i]+err for i, err in enumerate(err_abs)]
 colors = ['r','b','y','c','m','g','k']
-colors2 = ['tab:purple','tab:blue','tab:orange','tab:pink','tab:brown','tab:olive','tab:gray']
-plt.figure()
-plt.title('Plot of calibrated TOFs (lines), TOFs from energy data (*) and theoretical TOFs',fontsize=10)
-for i in range(len(Times)):
-    # if i==0:
-    #     plt.errorbar(Means[i][1],Times_m[i],std_T[i],marker='.',markersize=3,capsize=5,color='b',label='Experimental data')
-    #     plt.errorbar(E_det[i],Tns[i],err_abs[i],marker='.',markersize=3,capsize=3,color='r',elinewidth=0.5,label='Theoretical prediction')
-    # else:
-    plt.errorbar(Means[i][1],Times_m[i],std_T[i],marker='.',markersize=3,capsize=5,
-                 color=colors[i],label=f'{labels[i]}*')
-    plt.errorbar(E_det[i],Tns[i],err_abs[i],marker='.',markersize=3,capsize=3,
-                 color=colors2[i],label=labels[i])
-    plt.axhline(calib_time[i],color=colors2[i],linewidth=1)
-plt.xlabel('Energy [keV]')
-plt.ylabel('Time of flight [ns]')
-#plt.title('Comparing TOF data to theoretical predictions within errors')
-plt.legend(bbox_to_anchor=(1.05, 1),
-                         loc='upper left', borderaxespad=0.)
-plt.savefig('toferrorbars.svg',format='svg')
+
+#Comparing calibrated time data with calculated ToFs
+f, (ax1,ax2) = plt.subplots(1,2,sharex=True, sharey = True,figsize=(12,6))
+
+for i in range(len(time_diff1)):
+    if i!=0:
+        ax1.errorbar(Means[i][1],time_diff1[i],err_t1[i],marker='.',markersize=3,capsize=5,
+                     color=colors[i],label=f'{labels[i]}')
+    ax2.errorbar(Means[i][1],time_diff2[i],err_t2[i],marker='.',markersize=3,capsize=5,
+                 color=colors[i],label=f'{labels[i]}')
+    # plt.errorbar(E_det[i],Tns[i],err_abs[i],marker='.',markersize=3,capsize=3,
+                 # color=colors2[i],label=labels[i])
+    # plt.axhline(calib_time[i],color=colors[i],linewidth=1)
+
+ax1.set_title('Difference between measured ToFs and calculated ToFs')
+ax1.set_xlabel('Energy [keV]')
+ax1.set_ylabel('t_measured - t_true [ns]')
+ax2.set_title('Difference between ToFs from energy data and calculated ToFs')
+ax2.set_xlabel('Energy [keV]')
+ax2.set_ylabel('t(E) - t_true [ns]')
+plt.legend()
+plt.tight_layout()
+plt.savefig('toferrorbars.png')
+
 print(Tns)
 
