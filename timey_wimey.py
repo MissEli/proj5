@@ -98,7 +98,7 @@ def get_data(fnames):
     ydata = []
     labels = ['Proton1815','Proton577','\u03b11400','\u03b11464','\u03b12050','\u03b14750','Triton2730']
     for i in range(len(times)):
-<<<<<<< Updated upstream
+
         # plt.figure(figsize=(15,15))
         # plt.subplot(221)
         T_hist = plt.hist(times[i],bins=2000, range=(0,150))
@@ -138,16 +138,17 @@ def get_data(fnames):
     plt.legend()
     plt.xlabel('measured energy [keV]')
     plt.ylabel('ToF [ns]')
-=======
-        T_hist = plt.hist(times[i],bins=2000,range=(0,150),label=labels[i])  
-        if i == 0:
-            xdata = [t+0.075 for t in T_hist[1]]
-            xdata = np.delete(xdata,len(xdata)-1)
+
+    T_hist = plt.hist(times[i],bins=2000,range=(0,150),label=labels[i])  
+    if i == 0:
+        xdata = [t+0.075 for t in T_hist[1]]
+        xdata = np.delete(xdata, len(xdata)-1)
         ydata.append(T_hist[0])
     plt.xlabel('Pulse height')
     plt.ylabel('Count')
     plt.legend()
     return np.vstack((xdata,ydata))
+
 #%% Load parameters
 #p p a a a a t
 fnames = ['p1815.txt','p577.txt','a1400.txt','a1464.txt','a2050.txt','a4750.txt','t2730.txt']
@@ -155,7 +156,6 @@ ToF=[2.0569616549298337, 3.664777595671451, 4.719136521132885, 4.611566904522071
 ToF_err =[0.11239114904430238,0.2002412461030443,0.25785078435268605,0.25197324512672664,0.2120549554229963,0.13861459061648096, 0.15857484730962676]
 E = [1811.8976859999998, 570.8090032, 1370.5776578369482, 1428.936015304666, 2023.2640121302848, 4751.052015174993, 2714.916596558814]
 
-#%% Load data and fit
 peaks_C = []
 calib_peaks = []
 stds = []
@@ -196,7 +196,8 @@ for i in range(len(ydata)):
     plt.ylabel('Counts')
     plt.xlabel('Time [ns]')
     result = data_fit(x_time,ydata[i],1,'Time [ns]')
-    plt.savefig(f'time_{titles[i]}.svg',format='svg')
+    plt.show()
+    #plt.savefig(f'time_{titles[i]}.svg',format='svg')
 pdt = PDT(ToF,calib_peaks)
 
 #Calculate pdt error
@@ -258,9 +259,10 @@ plt.plot(x,ff(x,*params),'r')
 plt.axvline(x=ToF[0],color='k')
 plt.xlabel('Time [ns]')
 plt.ylabel('Counts')    
-plt.savefig('timepeak.svg',format='svg')
+plt.show()
+#plt.savefig('timepeak.svg',format='svg')
 
->>>>>>> Stashed changes
+
 
         
 

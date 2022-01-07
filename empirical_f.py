@@ -19,14 +19,14 @@ E = [E+Eloss[i] for i, E in enumerate(Etrue)]
 S = [2.233E-04, 8.276E-05, 1.459E-03, 1.404E-3, 1.048E-3, 5.040E-4, 1.650E-04] # stopping power MeV cm2/mg
 Sp = [2.233E-04, 8.276E-05, 1.058E-4, 1.016E-4, 7.514E-5, 3.535E-5, 5.779E-05] # stopping power protons at same velocity
 # --> Proton energies [0.5708, 1.8119, 1.3679, 1.4325, 2.0225, 4.7334, 2.7253]
-Z2 = [math.sqrt(s/Sp[i]) for i,s in enumerate(S)] # effective charge
-print(Z2)
+#Z2 = [math.sqrt(s/Sp[i]) for i,s in enumerate(S)] # effective charge (this gives strange values)
+#print(Z2)
+Z2 = [1, 1, 2, 2, 2, 2, 1] # Assume complete ionisation
 
 R = [0.000752516462312825, 0.004163276429979496, 0.00049132672233583, 0.0005152769574172682, 
         0.0007521621771829435, 0.002278116220403816, 0.00433567685956621] # ranges cm
-# rhoSi = 2.33 # g/cm3
-# x = [r/(3*rhoSi) for r in R] # cm
-F = [(dd-xx)/(mu*tau) for xx in R]
+
+F = [(dd-xx/3)/(mu*tau) for xx in R]
 
 
 td = [(Z2[i]**2)/(2*M[i])*math.exp(-E[i]/(3.75*M[i]))*C*(rho/d)**(2/5)*1/F[i] for i in range(len(R))]
